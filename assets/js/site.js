@@ -225,6 +225,109 @@
     });
   })();
 
+  /* ── balão de contato com o mascote (desktop) ──
+     Aparece depois que o form do hero sai da tela e some enquanto houver form à vista (a não ser que esteja aberto).
+     Fala de abertura uma vez por sessão; na 1ª abertura a conversa entra em sequência, como num chat. */
+  (function bubble() {
+    var el = $('[data-bubble]');
+    if (!el) return;
+    var fab = $('[data-bubble-toggle]', el);
+    var panel = $('.bubble__panel', el);
+    var closeBtn = $('[data-bubble-close]', el);
+    var desktop = window.matchMedia('(min-width: 1024px)');
+    var heroRef = $('[data-hero-form]');
+    var visibleForms = new Set();
+    var pastHero = !heroRef;
+    var open = false;
+    var seqDone = false;
+    var timers = [];
+    var later = function (fn, ms) { timers.push(setTimeout(fn, ms)); };
+    var clearTimers = function () { timers.forEach(clearTimeout); timers = []; };
+    var store = function (key, value) {
+      try {
+        if (value === undefined) return window.sessionStorage.getItem(key);
+        window.sessionStorage.setItem(key, value);
+      } catch (error) { /* sem storage: a fala de abertura só não fica lembrada */ }
+      return null;
+    };
+    var tease = function (on, said) {
+      el.classList.toggle('is-teasing', !!on);
+      el.classList.toggle('is-said', !!said);
+    };
+    var autoTease = function () {
+      if (reduceMotion) { tease(true, true); later(function () { tease(false); }, 5000); return; }
+      later(function () {
+        tease(true, false);
+        later(function () {
+          tease(true, true);
+          later(function () { if (!open && !fab.matches(':hover')) tease(false); }, 5200);
+        }, 1100);
+      }, 900);
+    };
+    var update = function () {
+      var show = desktop.matches && (open || (pastHero && visibleForms.size === 0));
+      el.classList.toggle('is-visible', show);
+      if (!show) { clearTimers(); tease(false); return; }
+      if (!open && !store('cs-bubble-teased')) { store('cs-bubble-teased', '1'); autoTease(); }
+    };
+    var runSequence = function () {
+      var parts = $$('.bubble__msg, .bubble__actions', panel);
+      var i = 0;
+      panel.classList.add('is-seq');
+      parts.forEach(function (p) { p.classList.remove('is-in'); });
+      var step = function () {
+        if (i >= parts.length) { panel.classList.remove('is-seq'); parts.forEach(function (p) { p.classList.remove('is-in'); }); return; }
+        parts[i].classList.add('is-in');
+        i += 1;
+        later(step, i < parts.length ? 650 : 200);
+      };
+      later(step, 650);
+    };
+    var setOpen = function (value, fromKeyboard) {
+      open = value;
+      fab.setAttribute('aria-expanded', String(value));
+      el.classList.toggle('is-open', value);
+      panel.hidden = !value;
+      clearTimers();
+      tease(false);
+      if (value) {
+        if (!seqDone && !reduceMotion && !fromKeyboard) runSequence();
+        else panel.classList.remove('is-seq');
+        seqDone = true;
+        panel.focus({ preventScroll: true });
+      }
+      update();
+    };
+
+    fab.addEventListener('click', function (e) { setOpen(!open, e.detail === 0); });
+    if (closeBtn) closeBtn.addEventListener('click', function () { setOpen(false); fab.focus(); });
+    $$('.bubble__act', panel).forEach(function (a) { a.addEventListener('click', function () { setOpen(false); }); });
+    fab.addEventListener('mouseenter', function () { if (!open) { clearTimers(); tease(true, true); } });
+    fab.addEventListener('mouseleave', function () { if (!open) tease(false); });
+    fab.addEventListener('focus', function () { if (!open) tease(true, true); });
+    fab.addEventListener('blur', function () { if (!open) tease(false); });
+    document.addEventListener('keydown', function (e) { if (open && e.key === 'Escape') { setOpen(false); fab.focus(); } });
+    document.addEventListener('click', function (e) { if (open && !el.contains(e.target)) setOpen(false); });
+    desktop.addEventListener('change', function () { if (!desktop.matches && open) setOpen(false); update(); });
+
+    if ('IntersectionObserver' in window) {
+      if (heroRef) {
+        new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) { pastHero = !entry.isIntersecting && entry.boundingClientRect.top < 0; });
+          update();
+        }).observe(heroRef);
+      }
+      var formIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) { if (entry.isIntersecting) visibleForms.add(entry.target); else visibleForms.delete(entry.target); });
+        update();
+      }, { threshold: 0.15 });
+      $$('form[data-cs-form]').forEach(function (f) { if (!heroRef || !heroRef.contains(f)) formIo.observe(f); });
+    } else {
+      pastHero = true;
+    }
+    update();
+  })();
+
   /* sem GSAP: estados finais visíveis (trilho do processo cheio) */
   if (!hasGsap || !hasST || reduceMotion) {
     $$('.step').forEach(function (s) { s.classList.add('is-on'); });

@@ -1,0 +1,37 @@
+
+:root {
+
+  --navy: #030e3c;
+  --navy-2: #0c1b54;
+  --white: #ffffff;
+  --paper: #f7f8fc;
+  --line: #dde0ea;
+  --field: #7d8299;
+  --ink: #030e3c;
+  --muted: #5f6478;
+  --muted-navy: #b8bdd0;
+  --red: #fe2423;
+  --red-ink: #dc141c;
+  --yellow: #ffe000;
+  --focus: #2b7bb9;
+  --error: #c8101a;
+  --red-tint: #fdeced;
+
+  --f: 'Poppins', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --t-display: clamp(2.75rem, 1.7rem + 4.4vw, 4.75rem);
+  --t-h1: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem);
+  --t-h2: clamp(1.875rem, 1.4rem + 1.8vw, 2.75rem);
+  --t-h3: clamp(1.25rem, 1.15rem + .4vw, 1.5rem);
+  --t-lead: 1.1875rem;
+  --t-body: 1.0625rem;
+  --t-small: .9375rem;
+  --t-label: .8125rem;
+  --track-tight: -.04em;
+
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 72px; --s-9: 112px;
+  --r-xs: 2px; --r-sm: 6px; --r-md: 10px; --r-pill: 999px;
+  --shadow-card: 0 1px 2px rgb(3 14 60 / .08), 0 18px 40px -16px rgb(3 14 60 / .45);
+
+  --dur-fast: 160ms; --dur-base: 280ms; --dur-reveal: 640ms;
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+}

@@ -4,7 +4,7 @@ window.CS_CONFIG = {
   lead: {
     endpoint: '/api/lead.php',
     redirect: '/thank-you/',
-    smsConsentVersion: 'sms-v1-2026-10-22'
+    smsConsentVersion: 'sms-v2-2026-10-23'
   },
   serviceArea: { zips: [], outOfArea: 'accept-with-message' },
   tracking: {

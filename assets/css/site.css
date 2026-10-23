@@ -144,6 +144,8 @@ p { text-wrap: pretty; }
 .rating:hover > span:last-child { text-decoration-color: var(--red); }
 .hero__call { justify-self: start; display: inline-flex; flex-wrap: wrap; column-gap: 8px; align-items: center; gap: 8px; min-height: 44px; font-size: var(--t-small); font-weight: 500; text-decoration: none; color: var(--muted-navy); }
 .hero__call .ic { color: var(--yellow); }
+.hero__call a { display: inline-flex; align-items: center; min-height: 44px; color: inherit; text-decoration: none; }
+.hero__call a:hover b { text-decoration-color: currentColor; }
 .hero__call b { color: var(--white); font-weight: 700; text-decoration: underline; text-decoration-color: var(--red); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 
 .hero__media { position: relative; margin: 0; overflow: hidden; background: var(--navy-2); }
@@ -404,6 +406,8 @@ textarea.input { min-height: 96px; resize: vertical; }
 .final__phone span { width: 100%; font-size: var(--t-label); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--navy); }
 .final__phone .ic { transition: transform var(--dur-base) var(--ease-expo); }
 .final__phone:hover .ic { transform: translate(3px, -3px); }
+.final__text { display: inline-flex; align-items: center; min-height: 44px; margin-top: calc(var(--s-4) * -1); font-weight: 700; font-size: 1.0625rem; color: var(--navy); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; transition: color var(--dur-fast); }
+.final__text:hover { color: var(--white); }
 
 .foot { background: var(--navy); color: var(--muted-navy); padding: clamp(64px, 8vw, 120px) 0 calc(var(--s-6) + env(safe-area-inset-bottom, 0px)); overflow: clip; }
 .foot__slogan { display: grid; font-size: var(--t-mega); font-weight: 800; letter-spacing: -.055em; line-height: .86; color: var(--white); margin-bottom: clamp(48px, 6vw, 96px); }

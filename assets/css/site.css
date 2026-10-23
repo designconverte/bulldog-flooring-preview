@@ -784,7 +784,10 @@ html.lenis, html.lenis body { height: auto; }
   .hero__title { font-size: clamp(2.5rem, 5.6vw, 3.5rem); }
 }
 @media (max-width: 767px) {
-  .hero__call { justify-self: start; }
+
+  .hero__call { justify-self: start; row-gap: 0; column-gap: 10px; }
+  .hero__call-q { flex-basis: calc(100% - 1.25em - 10px); }
+  .hero__lead { font-size: .875rem; }
   .hero__in { gap: var(--s-4); }
   .proof { grid-template-columns: minmax(0, 1fr); row-gap: 0; padding-top: var(--s-2); }
   .proof__item, .proof__item:nth-child(3) { border-left: 0; padding: var(--s-4) 0; }

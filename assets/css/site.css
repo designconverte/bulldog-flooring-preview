@@ -521,6 +521,9 @@ html.is-lbox-open { overflow: hidden; }
   .has-bubble .mbar { grid-template-columns: 48px 48px minmax(0, 1fr); }
   .has-bubble .mbar__call, .has-bubble .mbar__text { font-size: 0; gap: 0; }
   .has-bubble .mbar__call .ic, .has-bubble .mbar__text .ic { width: 22px; height: 22px; }
+
+  .hero__call-or { display: none; }
+  .hero__call { column-gap: 16px; }
 }
 @keyframes bubble-talk {
   0%, 30%, 100% { transform: none; }

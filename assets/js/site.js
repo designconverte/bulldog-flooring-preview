@@ -225,12 +225,14 @@
     });
   })();
 
-  /* ── balão de contato com o mascote (desktop) ──
-     Aparece depois que o form do hero sai da tela e some enquanto houver form à vista (a não ser que esteja aberto).
+  /* ── balão de contato com o mascote ──
+     Desktop: aparece depois que o form do hero sai da tela e some enquanto houver form à vista (a não ser que
+     esteja aberto). Celular e tablet: fica na ponta da barra fixa e aparece junto com ela.
      Fala de abertura uma vez por sessão; na 1ª abertura a conversa entra em sequência, como num chat. */
   (function bubble() {
     var el = $('[data-bubble]');
     if (!el) return;
+    root.classList.add('has-bubble');
     var fab = $('[data-bubble-toggle]', el);
     var panel = $('.bubble__panel', el);
     var closeBtn = $('[data-bubble-close]', el);
@@ -265,7 +267,7 @@
       }, 900);
     };
     var update = function () {
-      var show = desktop.matches && (open || (pastHero && visibleForms.size === 0));
+      var show = open || (pastHero && (!desktop.matches || visibleForms.size === 0));
       el.classList.toggle('is-visible', show);
       if (!show) { clearTimers(); tease(false); return; }
       if (!open && !store('cs-bubble-teased')) { store('cs-bubble-teased', '1'); autoTease(); }
@@ -308,7 +310,7 @@
     fab.addEventListener('blur', function () { if (!open) tease(false); });
     document.addEventListener('keydown', function (e) { if (open && e.key === 'Escape') { setOpen(false); fab.focus(); } });
     document.addEventListener('click', function (e) { if (open && !el.contains(e.target)) setOpen(false); });
-    desktop.addEventListener('change', function () { if (!desktop.matches && open) setOpen(false); update(); });
+    desktop.addEventListener('change', function () { if (open) setOpen(false); update(); });
 
     if ('IntersectionObserver' in window) {
       if (heroRef) {
@@ -326,6 +328,163 @@
       pastHero = true;
     }
     update();
+  })();
+
+  /* ── vídeo de fundo do hero (celular e tablet) ──
+     Só baixa depois do load e entra por cima da foto quando já está tocando (a foto segue sendo o LCP).
+     Fica de fora com reduced motion, economia de dados ou rede 2G; pausa fora da tela e tem botão de pausa. */
+  (function heroVideo() {
+    var video = $('[data-hero-video]');
+    if (!video) return;
+    var toggle = $('[data-hero-video-toggle]');
+    var small = window.matchMedia('(max-width: 1023px)');
+    var conn = navigator.connection || {};
+    if (reduceMotion || conn.saveData || /2g/.test(conn.effectiveType || '')) return;
+    var loaded = false;
+    var userPaused = false;
+    var inView = true;
+
+    var play = function () {
+      var p = video.play();
+      if (p && p.catch) p.catch(function () { /* autoplay bloqueado (ex.: modo economia do iOS): fica a foto */ });
+    };
+    var sync = function () {
+      if (!loaded) return;
+      if (small.matches && inView && !userPaused) play(); else video.pause();
+    };
+    var load = function () {
+      if (loaded || !small.matches) return;
+      loaded = true;
+      video.muted = true;
+      video.src = video.getAttribute('data-src');
+      sync();
+    };
+    var label = function () {
+      if (!toggle) return;
+      toggle.classList.toggle('is-paused', video.paused);
+      toggle.setAttribute('aria-label', video.paused ? 'Play the background video' : 'Pause the background video');
+    };
+
+    video.addEventListener('playing', function () {
+      video.classList.add('is-playing');
+      if (toggle) toggle.classList.add('is-on');
+      label();
+    });
+    video.addEventListener('pause', label);
+    if (toggle) {
+      toggle.addEventListener('click', function () {
+        userPaused = !video.paused;
+        if (userPaused) video.pause(); else play();
+      });
+    }
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) { inView = entries[0].isIntersecting; sync(); }).observe(video.parentNode);
+    }
+    small.addEventListener('change', function () { load(); sync(); });
+
+    var start = function () { setTimeout(load, 1200); };
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
+  })();
+
+  /* ── galeria: as fotos do mosaico abrem num slider em tela cheia ──
+     <dialog> modal (foco preso, Esc fecha, fundo inerte) criado no fim do body, fora do [data-gallery]: só a
+     abertura conta como gallery_open. Setas do teclado, botões e arraste trocam a foto; ao fechar o foco volta
+     para a foto de origem. */
+  (function lightbox() {
+    var gallery = $('[data-mosaic]');
+    if (!gallery || typeof window.HTMLDialogElement === 'undefined') return;
+    var shots = $$('.shot', gallery);
+    if (!shots.length) return;
+    var largest = function (img) {
+      var list = (img.getAttribute('srcset') || '').split(',').map(function (s) { return s.trim().split(/\s+/)[0]; }).filter(Boolean);
+      return list.length ? list[list.length - 1] : img.src;
+    };
+    var items = shots.map(function (shot) {
+      var img = $('img', shot);
+      var cap = $('figcaption', shot);
+      return { src: largest(img), alt: img.alt, cap: cap ? cap.textContent.trim() : '', w: img.getAttribute('width'), h: img.getAttribute('height') };
+    });
+
+    var dlg = document.createElement('dialog');
+    dlg.className = 'lbox';
+    dlg.setAttribute('aria-label', 'Project photos');
+    dlg.innerHTML =
+      '<div class="lbox__top"><p class="lbox__count" aria-hidden="true"></p>' +
+      '<button class="lbox__btn" type="button" aria-label="Close" data-lb-close><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button></div>' +
+      '<div class="lbox__stage" data-lb-stage><img class="lbox__img" alt="" decoding="async"></div>' +
+      '<div class="lbox__foot"><button class="lbox__btn" type="button" aria-label="Previous photo" data-lb-prev><svg class="ic" aria-hidden="true"><use href="#i-arrow-left"></use></svg></button>' +
+      '<p class="lbox__cap"></p>' +
+      '<button class="lbox__btn" type="button" aria-label="Next photo" data-lb-next><svg class="ic" aria-hidden="true"><use href="#i-arrow-right"></use></svg></button></div>' +
+      '<p class="sr-only" aria-live="polite" data-lb-live></p>';
+    document.body.appendChild(dlg);
+    var stage = $('[data-lb-stage]', dlg);
+    var view = $('.lbox__img', dlg);
+    var count = $('.lbox__count', dlg);
+    var cap = $('.lbox__cap', dlg);
+    var live = $('[data-lb-live]', dlg);
+    var current = 0;
+    var opener = null;
+
+    var show = function (i, dir) {
+      current = (i + items.length) % items.length;
+      var it = items[current];
+      view.src = it.src;
+      view.alt = it.alt;
+      if (it.w && it.h) { view.width = it.w; view.height = it.h; }
+      cap.textContent = it.cap;
+      count.textContent = (current + 1) + ' / ' + items.length;
+      live.textContent = 'Photo ' + (current + 1) + ' of ' + items.length + (it.cap ? ': ' + it.cap : '');
+      if (dir && hasGsap && !reduceMotion) gsap.fromTo(view, { x: dir * 48, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: 'expo.out', overwrite: true });
+      [current + 1, current - 1].forEach(function (k) { new Image().src = items[(k + items.length) % items.length].src; });
+    };
+    var open = function (i, from) {
+      opener = from;
+      show(i, 0);
+      dlg.showModal();
+      root.classList.add('is-lbox-open');
+      if (lenis) lenis.stop();
+      if (hasGsap && !reduceMotion) {
+        gsap.fromTo(dlg, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power2.out' });
+        gsap.fromTo(view, { scale: 0.94, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: 'expo.out', overwrite: true });
+      }
+    };
+    dlg.addEventListener('close', function () {
+      root.classList.remove('is-lbox-open');
+      if (lenis) lenis.start();
+      if (opener) opener.focus({ preventScroll: true });
+    });
+    $('[data-lb-close]', dlg).addEventListener('click', function () { dlg.close(); });
+    $('[data-lb-prev]', dlg).addEventListener('click', function () { show(current - 1, -1); });
+    $('[data-lb-next]', dlg).addEventListener('click', function () { show(current + 1, 1); });
+    dlg.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); show(current - 1, -1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); show(current + 1, 1); }
+    });
+    // arraste horizontal troca a foto; toque fora da foto fecha
+    var startX = null;
+    var startY = 0;
+    var swiped = false;
+    stage.addEventListener('pointerdown', function (e) { startX = e.clientX; startY = e.clientY; swiped = false; });
+    stage.addEventListener('pointerup', function (e) {
+      if (startX === null) return;
+      var dx = e.clientX - startX;
+      var dy = e.clientY - startY;
+      startX = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { swiped = true; show(current + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1); }
+    });
+    stage.addEventListener('click', function (e) { if (!swiped && e.target === stage) dlg.close(); });
+
+    shots.forEach(function (shot, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'shot__open';
+      btn.setAttribute('aria-label', 'View larger: ' + (items[i].cap || items[i].alt));
+      btn.setAttribute('aria-haspopup', 'dialog');
+      btn.innerHTML = '<span class="shot__zoom" aria-hidden="true"><svg class="ic"><use href="#i-expand"></use></svg></span>';
+      btn.addEventListener('click', function () { open(i, btn); });
+      shot.appendChild(btn);
+    });
   })();
 
   /* sem GSAP: estados finais visíveis (trilho do processo cheio) */
@@ -433,7 +592,7 @@
   /* ── revelações de seção ── */
   $$('[data-reveal]').forEach(function (group) {
     var items = group.hasAttribute('data-reveal-children') ? group.children : [group];
-    gsap.from(items, { y: 32, opacity: 0, duration: 1, ease: EXPO, stagger: 0.08, scrollTrigger: { trigger: group, start: 'top 86%', once: true } });
+    gsap.from(items, { y: 32, opacity: 0, duration: 1, ease: EXPO, stagger: 0.08, clearProps: 'transform,opacity', scrollTrigger: { trigger: group, start: 'top 86%', once: true } });
   });
 
   /* ── frase que acende com o scroll, palavra por palavra (35% → 100%, sem pin) ──

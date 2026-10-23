@@ -330,16 +330,25 @@
     update();
   })();
 
-  /* ── vídeo de fundo do hero (celular e tablet) ──
-     Só baixa depois do load e entra por cima da foto quando já está tocando (a foto segue sendo o LCP).
-     Fica de fora com reduced motion, economia de dados ou rede 2G; pausa fora da tela e tem botão de pausa. */
+  /* ── vídeo de fundo do hero ──
+     Só baixa depois do load e entra por cima da foto quando já está tocando e a foto terminou de montar (a foto
+     segue sendo o LCP). Fica de fora com reduced motion, economia de dados ou rede 2G; pausa fora da tela. Um botão
+     de pausa por layout: na linha da nota do Google no celular, ao lado da legenda da foto no desktop. */
   (function heroVideo() {
     var video = $('[data-hero-video]');
     if (!video) return;
-    var toggle = $('[data-hero-video-toggle]');
-    var small = window.matchMedia('(max-width: 1023px)');
+    var toggles = $$('[data-hero-video-toggle]');
     var conn = navigator.connection || {};
     if (reduceMotion || conn.saveData || /2g/.test(conn.effectiveType || '')) return;
+    var media = video.closest('[data-planks]');
+    var planksDone = !media || !hasGsap;
+    // a foto do hero vira o poster: o Chrome registra o vídeo no LCP quando a foto aparece, não quando ele começa a tocar
+    var still = media && $('.hero__img', media);
+    var setPoster = function () { if (still.currentSrc || still.src) video.poster = still.currentSrc || still.src; };
+    if (still) {
+      if (still.complete && still.naturalWidth) setPoster();
+      else still.addEventListener('load', setPoster, { once: true });
+    }
     var loaded = false;
     var userPaused = false;
     var inView = true;
@@ -350,37 +359,44 @@
     };
     var sync = function () {
       if (!loaded) return;
-      if (small.matches && inView && !userPaused) play(); else video.pause();
+      if (inView && !userPaused) play(); else video.pause();
     };
     var load = function () {
-      if (loaded || !small.matches) return;
+      if (loaded) return;
       loaded = true;
       video.muted = true;
       video.src = video.getAttribute('data-src');
       sync();
     };
     var label = function () {
-      if (!toggle) return;
-      toggle.classList.toggle('is-paused', video.paused);
-      toggle.setAttribute('aria-label', video.paused ? 'Play the background video' : 'Pause the background video');
+      toggles.forEach(function (t) {
+        t.classList.toggle('is-paused', video.paused);
+        t.setAttribute('aria-label', video.paused ? 'Play the background video' : 'Pause the background video');
+      });
     };
-
-    video.addEventListener('playing', function () {
+    // o vídeo só cobre a foto depois que as peças assentaram (a assinatura continua sendo o primeiro momento)
+    var reveal = function () {
+      if (!planksDone || video.paused || video.classList.contains('is-playing')) return;
       video.classList.add('is-playing');
-      if (toggle) toggle.classList.add('is-on');
-      label();
-    });
+      toggles.forEach(function (t) { t.classList.add('is-on'); });
+    };
+    if (!planksDone) {
+      var done = function () { planksDone = true; reveal(); };
+      media.addEventListener('planks:done', done, { once: true });
+      setTimeout(done, 6000);
+    }
+
+    video.addEventListener('playing', function () { reveal(); label(); });
     video.addEventListener('pause', label);
-    if (toggle) {
-      toggle.addEventListener('click', function () {
+    toggles.forEach(function (t) {
+      t.addEventListener('click', function () {
         userPaused = !video.paused;
         if (userPaused) video.pause(); else play();
       });
-    }
+    });
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (entries) { inView = entries[0].isIntersecting; sync(); }).observe(video.parentNode);
     }
-    small.addEventListener('change', function () { load(); sync(); });
 
     var start = function () { setTimeout(load, 1200); };
     if (document.readyState === 'complete') start();
@@ -549,7 +565,10 @@
     for (var r = p.rows - 1; r >= 0; r--) order.push(p.pieces[r * 2], p.pieces[r * 2 + 1]);
     var tl = gsap.timeline({
       paused: true,
-      onComplete: function () { p.pieces.forEach(function (el) { el.style.willChange = 'auto'; }); }
+      onComplete: function () {
+        p.pieces.forEach(function (el) { el.style.willChange = 'auto'; });
+        media.dispatchEvent(new Event('planks:done'));
+      }
     });
     // de baixo para cima, peça da esquerda e depois a da direita: o piso sendo assentado
     tl.from(order, { xPercent: -16, opacity: 0, duration: 0.95, ease: EXPO, stagger: 0.034 }, 0.05)

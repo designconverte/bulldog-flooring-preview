@@ -156,7 +156,15 @@ p { text-wrap: pretty; }
 .plank { position: absolute; inset: 0; will-change: transform, opacity; }
 .plank img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; }
 
-.hero__video, .hero__vctl { display: none; }
+.hero__video { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; opacity: .01; transition: opacity 1.2s var(--ease-out); }
+.hero__video.is-playing { opacity: 1; }
+
+.hero__vctl { display: none; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgb(255 255 255 / .35); border-radius: 50%; background: rgb(3 14 60 / .4); color: var(--white); cursor: pointer; visibility: hidden; opacity: 0; transition: opacity var(--dur-base) var(--ease-out), visibility 0s linear var(--dur-base), background-color var(--dur-fast); }
+.hero__vctl.is-on { visibility: visible; opacity: 1; transition-delay: 0s; }
+.hero__vctl:hover { background: var(--red); border-color: var(--red); }
+.hero__vctl .ic { width: 18px; height: 18px; }
+.hero__vctl .ic + .ic, .hero__vctl.is-paused .ic:first-child { display: none; }
+.hero__vctl.is-paused .ic + .ic { display: block; }
 
 .proof { list-style: none; padding: var(--s-5) 0 var(--s-6); margin: 0; display: grid; grid-template-columns: 1.15fr repeat(3, 1fr); border-top: 1px solid var(--hair-light); position: relative; z-index: 2; }
 .proof__item { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-2) var(--s-5); border-left: 1px solid var(--hair-light); color: var(--muted-navy); font-size: var(--t-small); line-height: 1.5; }
@@ -701,6 +709,8 @@ html.lenis, html.lenis body { height: auto; }
     linear-gradient(90deg, var(--navy) 0%, rgb(3 14 60 / .82) 14%, rgb(3 14 60 / .2) 46%, rgb(3 14 60 / 0) 62%),
     linear-gradient(180deg, rgb(3 14 60 / .7) 0%, rgb(3 14 60 / 0) 20%, rgb(3 14 60 / 0) 72%, rgb(3 14 60 / .7) 100%); }
   .hero__media-in { position: absolute; inset: -6% 0; height: auto; }
+  .hero__vctl--media { display: grid; position: absolute; z-index: 3; right: var(--gutter); bottom: 8px; }
+  .hero--video .hero__cap { right: calc(var(--gutter) + 56px); }
   .hero__main { min-height: min(100svh, 900px); display: flex; align-items: center; }
   .hero__in { width: 100%; }
   .hero__title { max-width: none; }
@@ -728,8 +738,7 @@ html.lenis, html.lenis body { height: auto; }
   .hero__media ~ .hero__in .hero__title, .hero__media ~ .hero__in .rating { text-shadow: 0 2px 18px rgb(3 14 60 / .55); }
   .hero__img, .hero__media .plank img { object-position: 50% 65%; }
   .hero__cap { display: none; }
-  .hero__video { display: block; position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; object-position: 50% 70%; opacity: 0; transition: opacity 1.2s var(--ease-out); }
-  .hero__video.is-playing { opacity: 1; }
+  .hero__video { object-position: 50% 70%; }
 
   .hero--video .hero__in--split { grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--s-2); }
   .hero--video .rating { gap: 8px; }
@@ -737,11 +746,7 @@ html.lenis, html.lenis body { height: auto; }
   .hero--video .hero__in--split > *, .hero--video .hero__copy > * { grid-column: 1 / -1; }
   .hero--video .hero__copy > .rating { grid-column: 1; }
   .hero--video .hero__copy > .hero__vctl { grid-column: 2; }
-  .hero__vctl { order: 3; align-self: center; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgb(255 255 255 / .35); border-radius: 50%; background: rgb(3 14 60 / .4); color: var(--white); cursor: pointer; visibility: hidden; opacity: 0; transition: opacity var(--dur-base) var(--ease-out), visibility 0s linear var(--dur-base); }
-  .hero__vctl.is-on { visibility: visible; opacity: 1; transition-delay: 0s; }
-  .hero__vctl .ic { width: 18px; height: 18px; }
-  .hero__vctl .ic + .ic, .hero__vctl.is-paused .ic:first-child { display: none; }
-  .hero__vctl.is-paused .ic + .ic { display: block; }
+  .hero__vctl--copy { display: grid; order: 3; align-self: center; }
 
   .hero__in--split { gap: var(--s-4); }
   .hero__in--split .hero__copy { display: contents; }

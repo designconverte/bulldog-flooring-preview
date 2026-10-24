@@ -528,11 +528,28 @@
     var media = $('[data-planks]');
     var img = media && $('.hero__img', media);
     if (!media || !img) return;
-    // juntas entre 32% e 68%: nenhuma peça passa de ~70% da largura nem vira candidata a LCP maior que o H1
+    // juntas entre 32% e 68%: nenhuma peça passa de ~70% da largura
     var joints = [0.62, 0.36, 0.55, 0.41, 0.66, 0.33, 0.58, 0.45, 0.68, 0.38, 0.52, 0.64];
 
+    // nenhuma peça pode ser maior que o maior bloco de texto da 1ª tela: a peça que entra por último viraria um
+    // LCP tardio. As linhas do H1 não entram na conta (sobem de trás da máscara e o Chrome não as registra);
+    // quem compete é o texto de apoio. Mais fileiras quando o painel é alto ou o texto é pequeno (ex.: Contact)
+    var rowsFor = function () {
+      var base = window.innerWidth >= 1024 ? 12 : 8;
+      var biggest = 0;
+      $$('.hero__lead, .hero .tag, .hero .rating, .hero__call').forEach(function (el) {
+        var r = el.getBoundingClientRect();
+        var visible = Math.max(0, Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0));
+        biggest = Math.max(biggest, r.width * visible);
+      });
+      var box = $('.hero__media-in', media).getBoundingClientRect();
+      if (!biggest || !box.height) return base;
+      var needed = Math.ceil((box.width * 0.68 * box.height) / (biggest * 0.85));
+      return Math.min(24, Math.max(base, needed));
+    };
+
     var build = function () {
-      var rows = window.innerWidth >= 1024 ? 12 : 8;
+      var rows = rowsFor();
       var layer = document.createElement('div');
       layer.className = 'planks';
       layer.setAttribute('aria-hidden', 'true');
@@ -571,7 +588,7 @@
       }
     });
     // de baixo para cima, peça da esquerda e depois a da direita: o piso sendo assentado
-    tl.from(order, { xPercent: -16, opacity: 0, duration: 0.95, ease: EXPO, stagger: 0.034 }, 0.05)
+    tl.from(order, { xPercent: -16, opacity: 0, duration: 0.95, ease: EXPO, stagger: Math.min(0.034, 0.82 / order.length) }, 0.05)
       .from($$('img', p.layer), { scale: 1.12, duration: 2.2, ease: EXPO }, 0)
       .to(media, { '--seam': '-0.5px', duration: 0.7, ease: 'power2.inOut' }, '-=0.45');
 
